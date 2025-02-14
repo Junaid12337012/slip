@@ -506,11 +506,11 @@ def main():
                         enhanced_versions[0][0]
                     })
 
-                    # Create progress bar if it doesn't exist
-                    if 'progress_bar' not in locals():
-                        progress_bar = st.progress(0.0)
+                    # Update progress
                     progress = (idx + 1) / len(uploaded_files)
-                    progress_bar.progress(progress)
+                    if 'progress_placeholder' not in st.session_state:
+                        st.session_state.progress_placeholder = st.progress(0.0)
+                    st.session_state.progress_placeholder.progress(progress)
 
                 except Exception as e:
                     st.session_state.processing_error = str(e)
@@ -518,7 +518,8 @@ def main():
                     continue
 
             # Complete progress bar
-            progress_bar.progress(1.0)
+            if 'progress_placeholder' in st.session_state:
+                st.session_state.progress_placeholder.progress(1.0)
 
             if not st.session_state.processing_error:
                 st.success("✅ All documents processed successfully!")
