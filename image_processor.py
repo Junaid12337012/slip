@@ -178,7 +178,7 @@ def auto_process_image(image_path):
         return False
 
 def preprocess_image(pil_image, custom_settings=None):
-    """Enhanced image processing with automatic document detection and cropping"""
+    """Enhanced image processing with image enhancement only"""
     if custom_settings is None:
         custom_settings = ImageSettings()
         
@@ -195,29 +195,11 @@ def preprocess_image(pil_image, custom_settings=None):
         new_height = int(original_height * scale)
         image_array = cv2.resize(image_array, (new_width, new_height))
     
-    # Detect document corners with custom settings
-    corners = detect_document_corners(image_array, custom_settings)
-    
-    if corners is not None:
-        # Apply perspective transform
-        warped = four_point_transform(image_array, corners)
-        
-        # Enhance the warped image with custom settings
-        enhanced = enhance_image(warped, custom_settings)
-        
-        # Convert back to PIL Image
-        enhanced_pil = Image.fromarray(enhanced)
-        
-        return [
-            ("Auto-Cropped & Enhanced", enhanced_pil),
-            ("Original", pil_image)
-        ]
-    
-    # If no document detected, just enhance the original
+    # Enhance the image with custom settings
     enhanced = enhance_image(image_array, custom_settings)
     enhanced_pil = Image.fromarray(enhanced)
     
     return [
-        ("Enhanced (No document detected)", enhanced_pil),
+        ("Enhanced", enhanced_pil),
         ("Original", pil_image)
     ]
