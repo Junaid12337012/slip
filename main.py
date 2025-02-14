@@ -646,6 +646,7 @@ def main():
 
             with tab2:
                 if st.session_state.processed_files:
+                    st.markdown("### Downloads Available")
 
             with tab3:
                 if st.session_state.processed_images:
