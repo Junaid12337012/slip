@@ -28,6 +28,7 @@ import os
 # Custom CSS for better styling
 st.markdown("""
 <style>
+    @import url('static/style.css');
     /* Main container */
     .main {
         padding: 2rem;
