@@ -43,16 +43,16 @@ def four_point_transform(image, pts):
 
 class ImageSettings:
     def __init__(self):
-        # Optimized default settings for maximum readability
-        self.clahe_clip_limit = 3.5
+        # Updated default settings as per user preference
+        self.clahe_clip_limit = 4.0
         self.clahe_grid_size = (8, 8)
-        self.canny_low = 50
-        self.canny_high = 150
+        self.canny_low = 100
+        self.canny_high = 200
         self.gaussian_kernel = (5, 5)
-        self.max_dimension = 2000  # Increased for better quality
-        self.contrast = 1.3
-        self.brightness = 1.15
-        self.sharpness = 1.4
+        self.max_dimension = 2000
+        self.contrast = 1.0
+        self.brightness = 1.9
+        self.sharpness = 2.0
 
 def enhance_image(image_array, settings=None):
     """Apply optimized image enhancement techniques"""
