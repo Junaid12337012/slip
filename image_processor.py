@@ -140,17 +140,15 @@ def detect_document_corners(image_array, settings=None):
         else:
             gray = image_array.astype(np.uint8)
 
-        # Ensure proper data type
-        gray = np.float32(gray)
-
         # Apply Gaussian blur to reduce noise
-        blurred = cv2.GaussianBlur(gray, settings.gaussian_kernel, 0)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-        # Convert back to uint8 for thresholding
-        blurred = np.uint8(blurred)
-
-        # Adaptive thresholding for better text detection
-        thresh = cv2.adaptiveThreshold(blurred, 255, 
+        # Use Canny edge detection with automatic threshold
+        median = np.median(blurred)
+        sigma = 0.33
+        lower = int(max(0, (1.0 - sigma) * median))
+        upper = int(min(255, (1.0 + sigma) * median))
+        edges = cv2.Canny(blurred, lower, upper) 
                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                      cv2.THRESH_BINARY, 11, 2)
 
@@ -161,27 +159,26 @@ def detect_document_corners(image_array, settings=None):
         kernel = np.ones((3,3), np.uint8)
         edges = cv2.dilate(edges, kernel, iterations=1)
 
-        try:
-            # Find contours with proper mode and method
-            contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            if not contours:
-                return None
-
-            # Filter out small contours and ensure proper format
-            valid_contours = []
-            for cnt in contours:
-                area = cv2.contourArea(cnt)
-                if area > 1000:
-                    cnt_float32 = cnt.astype(np.float32)
-                    if cnt_float32.size > 0 and cnt_float32.ndim == 3:
-                        valid_contours.append(cnt_float32)
-
-            if not valid_contours:
-                return None
-
-            # Find the largest contour
-            largest_contour = max(valid_contours, key=cv2.contourArea)
+        # Dilate edges to connect components
+        kernel = np.ones((5,5), np.uint8)
+        dilated = cv2.dilate(edges, kernel, iterations=2)
+        
+        # Find contours
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            return None
+            
+        # Find the largest contour by area
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Get the minimum area rectangle
+        rect = cv2.minAreaRect(largest_contour)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        
+        # Convert to float32 for perspective transform
+        return box.astype(np.float32)
 
         except Exception as e:
             print(f"Error during contour processing: {e}")
