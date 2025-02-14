@@ -177,8 +177,47 @@ def auto_process_image(image_path):
         print(f"Error processing {image_path}: {str(e)}")
         return False
 
-def preprocess_image(pil_image, custom_settings=None):
-    """Enhanced image processing with image enhancement only"""
+def preprocess_image(pil_image, custom_settings=None, auto_crop=True):
+    """Enhanced image processing with smart document detection"""
+    if custom_settings is None:
+        custom_settings = ImageSettings()
+        
+    # Convert PIL image to numpy array
+    image_array = np.array(pil_image)
+    
+    if auto_crop:
+        # Convert to grayscale for edge detection
+        gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        
+        # Apply edge detection
+        edges = cv2.Canny(blurred, custom_settings.canny_low, custom_settings.canny_high)
+        kernel = np.ones((3,3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=2)
+        
+        # Find contours
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            # Find largest contour by area
+            max_contour = max(contours, key=cv2.contourArea)
+            rect = cv2.minAreaRect(max_contour)
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            
+            # Get width and height of the detected rectangle
+            width = int(rect[1][0])
+            height = int(rect[1][1])
+            
+            src_pts = box.astype("float32")
+            dst_pts = np.array([[0, height-1],
+                              [0, 0],
+                              [width-1, 0],
+                              [width-1, height-1]], dtype="float32")
+            
+            # Apply perspective transform
+            M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+            image_array = cv2.warpPerspective(image_array, M, (width, height))
     if custom_settings is None:
         custom_settings = ImageSettings()
         

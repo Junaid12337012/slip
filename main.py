@@ -154,7 +154,101 @@ st.markdown("""
         border-radius: 10px;
     }
 </style>
-
+    
+    h2 {
+        color: #333;
+        font-size: 1.8rem !important;
+        font-weight: 600 !important;
+        margin-top: 2rem !important;
+    }
+    
+    h3 {
+        color: #424242;
+        font-size: 1.4rem !important;
+        font-weight: 600 !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        padding: 2rem 1rem;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Download buttons */
+    .stDownloadButton > button {
+        background-color: #1E88E5;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        margin: 0.5rem 0;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stDownloadButton > button:hover {
+        background-color: #1976D2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(30,136,229,0.2);
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem !important;
+        font-weight: 600;
+    }
+    
+    /* Progress bar */
+    .stProgress > div > div {
+        background-color: #1E88E5;
+    }
+    
+    /* Sliders */
+    .stSlider {
+        padding: 1rem 0;
+    }
+    
+    /* File uploader */
+    .stFileUploader {
+        padding: 1rem;
+        border: 2px dashed #1E88E5;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin: 1rem 0;
+    }
+    
+    /* Success message */
+    .success {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #4CAF50;
+        color: white;
+        margin: 1rem 0;
+    }
+    
+    /* Error message */
+    .error {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #f44336;
+        color: white;
+        margin: 1rem 0;
+    }
 </style>
 """,
             unsafe_allow_html=True)
@@ -228,7 +322,22 @@ def main():
             </div>
         """,
                     unsafe_allow_html=True)
-
+                    
+        # Clear all button
+        if st.button("🗑️ Clear All Images", use_container_width=True):
+            st.session_state.processed_files = []
+            st.session_state.processed_images = []
+            st.session_state.processing_error = None
+            st.experimental_rerun()
+            
+        st.markdown("---")
+        
+        # Auto-crop toggle
+        auto_crop = st.toggle("📐 Enable Auto-Crop", value=True, 
+                            help="Automatically detect and crop documents")
+        
+        st.markdown("---")
+        
         # Image format selection
         image_format = st.selectbox("Select Output Format",
                                     ["PNG", "JPEG", "PDF"],
