@@ -1,24 +1,19 @@
 import pytesseract
+import numpy as np
 from PIL import Image
 
+
 def extract_text(image):
-    """
-    Extract text from the processed image using Tesseract OCR
-    """
+    """Extract text from an image using Tesseract OCR"""
     try:
-        # Configure Tesseract parameters
-        custom_config = r'--oem 3 --psm 6'
-        
-        # Extract text
-        text = pytesseract.image_to_string(image, config=custom_config)
-        
-        # Clean up the extracted text
-        text = text.strip()
-        
-        if not text:
-            return "No text was detected in the image. Please try with a clearer image."
-        
-        return text
-    
+        # Convert PIL Image to numpy array if needed
+        if isinstance(image, Image.Image):
+            image_array = np.array(image)
+        else:
+            image_array = image
+
+        # Extract text using Tesseract
+        text = pytesseract.image_to_string(image_array)
+        return text.strip()
     except Exception as e:
-        raise Exception(f"Error in OCR processing: {str(e)}")
+        raise Exception(f"OCR Error: {str(e)}")
