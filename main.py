@@ -459,22 +459,37 @@ def main():
                     """, unsafe_allow_html=True)
                     
                     try:
-                        # Create ZIP file with all processed documents
+                        # Create ZIP file option
                         zip_buffer = io.BytesIO()
                         with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
                             for file_data in st.session_state.processed_files:
                                 zip_file.writestr(file_data['name'], file_data['data'])
                         
                         zip_buffer.seek(0)
-                        st.download_button(
-                            label="📥 DOWNLOAD ALL FILES AS ZIP",
-                            data=zip_buffer.getvalue(),
-                            file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                            mime="application/zip",
-                            key=f"download_all_zip_{time.time()}",
-                            use_container_width=True,
-                            help="Click to download all processed files in a single ZIP archive"
-                        )
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.download_button(
+                                label="📥 DOWNLOAD ALL AS ZIP",
+                                data=zip_buffer.getvalue(),
+                                file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                                mime="application/zip",
+                                key=f"download_all_zip_{time.time()}",
+                                use_container_width=True,
+                                help="Download all files in a ZIP archive"
+                            )
+                        
+                        # Add batch download buttons for all images
+                        with col2:
+                            st.markdown("### Or download all individually:")
+                            for file_data in st.session_state.processed_files:
+                                st.download_button(
+                                    label=f"📥 Download {file_data['name']}",
+                                    data=file_data['data'],
+                                    file_name=file_data['name'],
+                                    mime=file_data['mime'],
+                                    key=f"batch_download_{file_data['name']}_{time.time()}"
+                                )
                         
                         # Divider
                         st.markdown("---")
