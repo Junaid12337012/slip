@@ -155,7 +155,100 @@ st.markdown("""
     }
 </style>
     
-
+    h2 {
+        color: #333;
+        font-size: 1.8rem !important;
+        font-weight: 600 !important;
+        margin-top: 2rem !important;
+    }
+    
+    h3 {
+        color: #424242;
+        font-size: 1.4rem !important;
+        font-weight: 600 !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        padding: 2rem 1rem;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Download buttons */
+    .stDownloadButton > button {
+        background-color: #1E88E5;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        margin: 0.5rem 0;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stDownloadButton > button:hover {
+        background-color: #1976D2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(30,136,229,0.2);
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem !important;
+        font-weight: 600;
+    }
+    
+    /* Progress bar */
+    .stProgress > div > div {
+        background-color: #1E88E5;
+    }
+    
+    /* Sliders */
+    .stSlider {
+        padding: 1rem 0;
+    }
+    
+    /* File uploader */
+    .stFileUploader {
+        padding: 1rem;
+        border: 2px dashed #1E88E5;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin: 1rem 0;
+    }
+    
+    /* Success message */
+    .success {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #4CAF50;
+        color: white;
+        margin: 1rem 0;
+    }
+    
+    /* Error message */
+    .error {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #f44336;
+        color: white;
+        margin: 1rem 0;
+    }
 </style>
 """,
             unsafe_allow_html=True)
@@ -434,21 +527,34 @@ def main():
                             # Create columns for image and download buttons
                             img_col, btn_col = st.columns([3, 1])
 
-                            with img_col:
-                                st.markdown(f"**{img_data['type']}**")
-                                st.image(img_data['processed'],
-                                         use_container_width=True,
-                                         caption="Processed")
-
-                            with btn_col:
-                                st.markdown(
-                                    "<br><br><br>",
-                                    unsafe_allow_html=True)  # Add some spacing
-                                for file_data in st.session_state.processed_files:
-                                    if file_data['name'].startswith(
-                                            os.path.splitext(
-                                                img_data['name'])[0]):
-                                        # PNG Download
+                            st.markdown(f"**{img_data['type']}**")
+                            st.image(img_data['processed'],
+                                     use_container_width=True,
+                                     caption="Processed")
+                            
+                            # Download options below image
+                            st.markdown("### Download Options")
+                            download_cols = st.columns(3)
+                            
+                            for file_data in st.session_state.processed_files:
+                                if file_data['name'].startswith(
+                                        os.path.splitext(
+                                            img_data['name'])[0]):
+                                    # PDF Download (default)
+                                    with download_cols[0]:
+                                        st.download_button(
+                                            label="📥 PDF (Recommended)",
+                                            data=file_data['data'],
+                                            file_name=
+                                            f"{os.path.splitext(file_data['name'])[0]}.pdf",
+                                            mime="application/pdf",
+                                            key=
+                                            f"download_pdf_{img_data['name']}_{time.time()}",
+                                            use_container_width=True,
+                                            help="Best for documents - recommended format")
+                                    
+                                    # PNG Download
+                                    with download_cols[1]:
                                         st.download_button(
                                             label="📥 PNG",
                                             data=file_data['data'],
@@ -458,7 +564,9 @@ def main():
                                             key=
                                             f"download_png_{img_data['name']}_{time.time()}",
                                             use_container_width=True)
-                                        # JPEG Download
+                                            
+                                    # JPEG Download
+                                    with download_cols[2]:
                                         st.download_button(
                                             label="📥 JPEG",
                                             data=file_data['data'],
@@ -468,17 +576,7 @@ def main():
                                             key=
                                             f"download_jpg_{img_data['name']}_{time.time()}",
                                             use_container_width=True)
-                                        # PDF Download
-                                        st.download_button(
-                                            label="📥 PDF",
-                                            data=file_data['data'],
-                                            file_name=
-                                            f"{os.path.splitext(file_data['name'])[0]}.pdf",
-                                            mime="application/pdf",
-                                            key=
-                                            f"download_pdf_{img_data['name']}_{time.time()}",
-                                            use_container_width=True)
-                                        break
+                                    break
 
             # Add batch download section at the bottom
             if st.session_state.processed_files:
