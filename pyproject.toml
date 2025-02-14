@@ -1,0 +1,13 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "fpdf>=1.7.2",
+    "numpy>=2.2.2",
+    "opencv-python>=4.11.0.86",
+    "pytesseract>=0.3.13",
+    "streamlit-cropper>=0.2.2",
+    "streamlit>=1.42.0",
+]
