@@ -126,32 +126,37 @@ def enhance_image(image_array, settings=None):
 
 def detect_document_corners(image_array, settings=None):
     """Detect document corners using edge detection and contour finding"""
-    if settings is None:
-        settings = ImageSettings()
+    try:
+        if settings is None:
+            settings = ImageSettings()
 
-    # Convert to grayscale if needed
-    if len(image_array.shape) == 3:
-        gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
-    else:
-        gray = image_array
+        # Convert to grayscale if needed
+        if len(image_array.shape) == 3:
+            gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = image_array
 
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, settings.gaussian_kernel, 0)
-    
-    # Adaptive thresholding for better text detection
-    thresh = cv2.adaptiveThreshold(blurred, 255, 
-                                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                 cv2.THRESH_BINARY, 11, 2)
-    
-    # Edge detection with custom settings
-    edges = cv2.Canny(thresh, settings.canny_low, settings.canny_high)
-    
-    # Dilate edges to connect components
-    kernel = np.ones((3,3), np.uint8)
-    edges = cv2.dilate(edges, kernel, iterations=1)
-    
-    # Find contours
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Apply Gaussian blur to reduce noise
+        blurred = cv2.GaussianBlur(gray, settings.gaussian_kernel, 0)
+        
+        # Adaptive thresholding for better text detection
+        thresh = cv2.adaptiveThreshold(blurred, 255, 
+                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                     cv2.THRESH_BINARY, 11, 2)
+        
+        # Edge detection with custom settings
+        edges = cv2.Canny(thresh, settings.canny_low, settings.canny_high)
+        
+        # Dilate edges to connect components
+        kernel = np.ones((3,3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
+        
+        # Find contours
+        contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Convert contours to the correct format
+        if contours and len(contours) > 0:
+            contours = [cnt.astype('float32') for cnt in contours]
     
     if not contours:
         return None
