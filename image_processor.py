@@ -43,40 +43,69 @@ def four_point_transform(image, pts):
 
 class ImageSettings:
     def __init__(self):
-        # Updated default settings as per user preference
-        self.clahe_clip_limit = 4.0
+        # Updated settings for bank slip/document processing
+        self.clahe_clip_limit = 3.0
         self.clahe_grid_size = (8, 8)
-        self.canny_low = 100
-        self.canny_high = 200
-        self.gaussian_kernel = (5, 5)
+        self.canny_low = 50  # Lower threshold for better edge detection
+        self.canny_high = 150
+        self.gaussian_kernel = (3, 3)  # Lighter blur
         self.max_dimension = 2000
-        self.contrast = 1.0
-        self.brightness = 1.9
-        self.sharpness = 2.0
+        self.contrast = 1.6  # 60% increase
+        self.brightness = 1.5  # 50% increase
+        self.sharpness = 1.4  # 40% increase
+        self.shadow_reduction = 0.25  # 25% shadow reduction
+        self.noise_reduction = True
+        self.auto_rotate = True
 
 def enhance_image(image_array, settings=None):
-    """Apply optimized image enhancement techniques"""
+    """Enhanced processing for bank slips and documents"""
     if settings is None:
         settings = ImageSettings()
     
-    # Convert to LAB color space
-    lab = cv2.cvtColor(image_array, cv2.COLOR_RGB2LAB)
+    # Auto-rotate if needed
+    if settings.auto_rotate:
+        coords = np.column_stack(np.where(image_array > 0))
+        angle = cv2.minAreaRect(coords)[-1]
+        if angle < -45:
+            angle = 90 + angle
+        if angle != 0:
+            (h, w) = image_array.shape[:2]
+            center = (w // 2, h // 2)
+            M = cv2.getRotationMatrix2D(center, angle, 1.0)
+            image_array = cv2.warpAffine(image_array, M, (w, h),
+                                       flags=cv2.INTER_CUBIC,
+                                       borderMode=cv2.BORDER_REPLICATE)
     
-    # Split channels
+    # Noise reduction
+    if settings.noise_reduction:
+        image_array = cv2.GaussianBlur(image_array, settings.gaussian_kernel, 0)
+    
+    # Convert to LAB color space for better processing
+    lab = cv2.cvtColor(image_array, cv2.COLOR_RGB2LAB)
     l, a, b = cv2.split(lab)
     
-    # Apply CLAHE to L channel with optimized settings
+    # Apply CLAHE to L channel
     clahe = cv2.createCLAHE(clipLimit=settings.clahe_clip_limit, 
                            tileGridSize=settings.clahe_grid_size)
     cl = clahe.apply(l)
     
+    # Shadow reduction in L channel
+    if settings.shadow_reduction > 0:
+        shadow_corrected = cv2.addWeighted(
+            l, 1 - settings.shadow_reduction,
+            cv2.GaussianBlur(l, (0, 0), 10),
+            settings.shadow_reduction, 0
+        )
+        cl = cv2.addWeighted(cl, 0.7, shadow_corrected, 0.3, 0)
+    
     # Merge channels
     limg = cv2.merge((cl, a, b))
-    
-    # Convert back to RGB
     enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
     
-    # Optimize contrast and brightness
+    # Enhance contrast and brightness
+    enhanced = cv2.convertScaleAbs(enhanced, 
+                                  alpha=settings.contrast,
+                                  beta=settings.brightness * 10)
     enhanced = cv2.convertScaleAbs(enhanced, 
                                   alpha=settings.contrast,
                                   beta=settings.brightness * 10)
