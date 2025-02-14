@@ -397,21 +397,45 @@ def main():
                             st.image(img_data['original'], use_container_width=True, caption="Original")
                         
                         with comp_col2:
-                            st.markdown(f"**{img_data['type']}**")
-                            st.image(img_data['processed'], use_container_width=True, caption="Processed")
+                            # Create columns for image and download buttons
+                            img_col, btn_col = st.columns([3, 1])
                             
-                            # Add download button directly under the processed image
-                            for file_data in st.session_state.processed_files:
-                                if file_data['name'].startswith(os.path.splitext(img_data['name'])[0]):
-                                    st.download_button(
-                                        label="📥 Download This Image",
-                                        data=file_data['data'],
-                                        file_name=file_data['name'],
-                                        mime=file_data['mime'],
-                                        key=f"download_inline_{img_data['name']}_{time.time()}",
-                                        use_container_width=True
-                                    )
-                                    break
+                            with img_col:
+                                st.markdown(f"**{img_data['type']}**")
+                                st.image(img_data['processed'], use_container_width=True, caption="Processed")
+                            
+                            with btn_col:
+                                st.markdown("<br><br><br>", unsafe_allow_html=True)  # Add some spacing
+                                for file_data in st.session_state.processed_files:
+                                    if file_data['name'].startswith(os.path.splitext(img_data['name'])[0]):
+                                        # PNG Download
+                                        st.download_button(
+                                            label="📥 PNG",
+                                            data=file_data['data'],
+                                            file_name=f"{os.path.splitext(file_data['name'])[0]}.png",
+                                            mime="image/png",
+                                            key=f"download_png_{img_data['name']}_{time.time()}",
+                                            use_container_width=True
+                                        )
+                                        # JPEG Download
+                                        st.download_button(
+                                            label="📥 JPEG",
+                                            data=file_data['data'],
+                                            file_name=f"{os.path.splitext(file_data['name'])[0]}.jpg",
+                                            mime="image/jpeg",
+                                            key=f"download_jpg_{img_data['name']}_{time.time()}",
+                                            use_container_width=True
+                                        )
+                                        # PDF Download
+                                        st.download_button(
+                                            label="📥 PDF",
+                                            data=file_data['data'],
+                                            file_name=f"{os.path.splitext(file_data['name'])[0]}.pdf",
+                                            mime="application/pdf",
+                                            key=f"download_pdf_{img_data['name']}_{time.time()}",
+                                            use_container_width=True
+                                        )
+                                        break
             
             # Add batch download section at the bottom
             if st.session_state.processed_files:
