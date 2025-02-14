@@ -11,13 +11,19 @@ def export_to_pdf(text):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
+    pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Split text into lines and add to PDF
+    # Handle encoding issues and split text into lines
     lines = text.split('\n')
     for line in lines:
-        pdf.cell(0, 10, txt=line, ln=True)
+        try:
+            # Clean the text and encode properly
+            clean_line = line.encode('latin-1', 'ignore').decode('latin-1')
+            pdf.cell(0, 10, txt=clean_line, ln=True)
+        except Exception:
+            continue
     
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='B')
 
 def export_to_json(text):
     """Export extracted text to JSON format"""
