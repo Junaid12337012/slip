@@ -188,22 +188,37 @@ def preprocess_image(pil_image, custom_settings=None, auto_crop=True):
     if auto_crop:
         # Convert to grayscale for edge detection
         gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        blurred = cv2.GaussianBlur(gray, (9, 9), 0)
         
-        # Apply edge detection
-        edges = cv2.Canny(blurred, custom_settings.canny_low, custom_settings.canny_high)
-        kernel = np.ones((3,3), np.uint8)
-        edges = cv2.dilate(edges, kernel, iterations=2)
+        # Apply adaptive thresholding
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+        
+        # Apply edge detection with optimized parameters
+        edges = cv2.Canny(thresh, 50, 150)
+        kernel = np.ones((5,5), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=3)
+        edges = cv2.erode(edges, kernel, iterations=2)
         
         # Find contours
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         if contours:
-            # Find largest contour by area
-            max_contour = max(contours, key=cv2.contourArea)
-            rect = cv2.minAreaRect(max_contour)
-            box = cv2.boxPoints(rect)
-            box = np.int32(box)
+            # Filter contours by area to avoid noise
+            valid_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 1000]
+            if valid_contours:
+                # Find the contour with largest area
+                max_contour = max(valid_contours, key=cv2.contourArea)
+                peri = cv2.arcLength(max_contour, True)
+                approx = cv2.approxPolyDP(max_contour, 0.02 * peri, True)
+                
+                # If we have a rectangle (4 points), use it directly
+                if len(approx) == 4:
+                    box = np.float32(approx)
+                else:
+                    # Otherwise use minimum area rectangle
+                    rect = cv2.minAreaRect(max_contour)
+                    box = cv2.boxPoints(rect)
+                    box = np.float32(box)
             
             # Get width and height of the detected rectangle
             width = int(rect[1][0])
