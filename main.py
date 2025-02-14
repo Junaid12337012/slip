@@ -153,7 +153,103 @@ st.markdown("""
         background: linear-gradient(90deg, #1E88E5, #1976D2);
         border-radius: 10px;
     }
+</style>
 
+    h2 {
+        color: #333;
+        font-size: 1.8rem !important;
+        font-weight: 600 !important;
+        margin-top: 2rem !important;
+    }
+
+    h3 {
+        color: #424242;
+        font-size: 1.4rem !important;
+        font-weight: 600 !important;
+        margin-top: 1.5rem !important;
+    }
+
+    /* Sidebar */
+    .css-1d391kg {
+        padding: 2rem 1rem;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Download buttons */
+    .stDownloadButton > button {
+        background-color: #1E88E5;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        margin: 0.5rem 0;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .stDownloadButton > button:hover {
+        background-color: #1976D2;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(30,136,229,0.2);
+    }
+
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem !important;
+        font-weight: 600;
+    }
+
+    /* Progress bar */
+    .stProgress > div > div {
+        background-color: #1E88E5;
+    }
+
+    /* Sliders */
+    .stSlider {
+        padding: 1rem 0;
+    }
+
+    /* File uploader */
+    .stFileUploader {
+        padding: 1rem;
+        border: 2px dashed #1E88E5;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin: 1rem 0;
+    }
+
+    /* Success message */
+    .success {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #4CAF50;
+        color: white;
+        margin: 1rem 0;
+    }
+
+    /* Error message */
+    .error {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #f44336;
+        color: white;
+        margin: 1rem 0;
+    }
+</style>
 """,
             unsafe_allow_html=True)
 
@@ -437,7 +533,7 @@ def main():
             st.markdown("## 📄 Processed Documents")
 
             # Add tabs for better organization
-            tab1, tab2 = st.tabs(["📸 Image Preview", "📥 Downloads"])
+            tab1, tab2, tab3 = st.tabs(["📸 Image Preview", "📥 Downloads", "📝 Extracted Text"])
 
             with tab1:
                 for img_data in st.session_state.processed_images:
@@ -550,6 +646,29 @@ def main():
 
             with tab2:
                 if st.session_state.processed_files:
+
+            with tab3:
+                if st.session_state.processed_images:
+                    st.markdown("## 📄 Extracted Text")
+                    for img_data in st.session_state.processed_images:
+                        with st.expander(f"📄 Text from {img_data['name']}", expanded=True):
+                            try:
+                                from ocr_handler import extract_text
+                                text = extract_text(img_data['processed'])
+                                search_term = st.text_input("Search in text:", key=f"search_{img_data['name']}")
+                                if search_term:
+                                    import re
+                                    highlighted_text = text.replace(search_term, f"**{search_term}**")
+                                    st.markdown(highlighted_text)
+                                else:
+                                    st.text_area("Extracted Text:", value=text, height=200)
+                                
+                                # Add copy button
+                                if st.button(f"📋 Copy Text", key=f"copy_{img_data['name']}"):
+                                    st.write("Text copied to clipboard!")
+                                    st.session_state['clipboard'] = text
+                            except Exception as e:
+                                st.error(f"Could not extract text: {str(e)}")
                     # Add prominent download all button
                     st.markdown("""
                         <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
