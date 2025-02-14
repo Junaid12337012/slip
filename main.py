@@ -402,33 +402,51 @@ def main():
             
             with tab2:
                 if st.session_state.processed_files:
-                    # Add "Download All" button at the top
-                    st.markdown("### 📦 Batch Download")
-                    zip_buffer = io.BytesIO()
-                    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-                        for file_data in st.session_state.processed_files:
-                            zip_file.writestr(file_data['name'], file_data['data'])
-                    
-                    zip_buffer.seek(0)
-                    st.download_button(
-                        label="📥 Download All Files As ZIP",
-                        data=zip_buffer,
-                        file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                        mime="application/zip",
-                        key="download_all_zip",
-                        use_container_width=True
-                    )
-                    
-                    st.markdown("### 📄 Individual Files")
-                    for idx, file_data in enumerate(st.session_state.processed_files):
+                    try:
+                        # Add "Download All" button at the top
+                        st.markdown("### 📦 Batch Download")
+                        zip_buffer = io.BytesIO()
+                        with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+                            for file_data in st.session_state.processed_files:
+                                try:
+                                    zip_file.writestr(file_data['name'], file_data['data'])
+                                except Exception as e:
+                                    st.warning(f"⚠️ Could not add {file_data['name']} to ZIP: {str(e)}")
+                                    continue
+                        
+                        zip_buffer.seek(0)
                         st.download_button(
-                            label=f"📥 {file_data['name']}",
-                            data=file_data['data'],
-                            file_name=file_data['name'],
-                            mime=file_data['mime'],
-                            key=f"download_file_{idx}_{file_data['name']}",
+                            label="📥 Download All Files As ZIP",
+                            data=zip_buffer.getvalue(),
+                            file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                            mime="application/zip",
+                            key=f"download_all_zip_{time.time()}",  # Unique key to prevent caching
                             use_container_width=True
                         )
+                    except Exception as e:
+                        st.error(f"❌ Error creating ZIP file: {str(e)}")
+                    
+                    # Individual file downloads
+                    st.markdown("### 📄 Individual Files")
+                    for idx, file_data in enumerate(st.session_state.processed_files):
+                        try:
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.markdown(f"**{file_data['name']}**")
+                            with col2:
+                                st.download_button(
+                                    label="📥 Download",
+                                    data=file_data['data'],
+                                    file_name=file_data['name'],
+                                    mime=file_data['mime'],
+                                    key=f"download_file_{idx}_{time.time()}",  # Unique key to prevent caching
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            st.error(f"❌ Error with download button for {file_data['name']}: {str(e)}")
+                            continue
+                else:
+                    st.info("ℹ️ No processed files available for download. Please process some documents first.")
 
     # Tips and Help Section
     with st.expander("💡 Pro Tips for Perfect Scans", expanded=False):
