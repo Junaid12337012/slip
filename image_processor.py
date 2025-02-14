@@ -203,7 +203,7 @@ def preprocess_image(pil_image, custom_settings=None, auto_crop=True):
             max_contour = max(contours, key=cv2.contourArea)
             rect = cv2.minAreaRect(max_contour)
             box = cv2.boxPoints(rect)
-            box = np.int0(box)
+            box = np.int32(box)
             
             # Get width and height of the detected rectangle
             width = int(rect[1][0])
