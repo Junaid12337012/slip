@@ -35,7 +35,7 @@ st.markdown("""
         max-width: 1200px;
         margin: 0 auto;
     }
-    
+
     /* Headers */
     h1 {
         color: #1E88E5;
@@ -154,26 +154,26 @@ st.markdown("""
         border-radius: 10px;
     }
 </style>
-    
+
     h2 {
         color: #333;
         font-size: 1.8rem !important;
         font-weight: 600 !important;
         margin-top: 2rem !important;
     }
-    
+
     h3 {
         color: #424242;
         font-size: 1.4rem !important;
         font-weight: 600 !important;
         margin-top: 1.5rem !important;
     }
-    
+
     /* Sidebar */
     .css-1d391kg {
         padding: 2rem 1rem;
     }
-    
+
     /* Buttons */
     .stButton > button {
         width: 100%;
@@ -182,12 +182,12 @@ st.markdown("""
         padding: 0.5rem 1rem;
         transition: all 0.3s ease;
     }
-    
+
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    
+
     /* Download buttons */
     .stDownloadButton > button {
         background-color: #1E88E5;
@@ -198,13 +198,13 @@ st.markdown("""
         font-weight: 600;
         transition: all 0.3s ease;
     }
-    
+
     .stDownloadButton > button:hover {
         background-color: #1976D2;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(30,136,229,0.2);
     }
-    
+
     /* Expander */
     .streamlit-expanderHeader {
         background-color: #f8f9fa;
@@ -212,17 +212,17 @@ st.markdown("""
         padding: 1rem !important;
         font-weight: 600;
     }
-    
+
     /* Progress bar */
     .stProgress > div > div {
         background-color: #1E88E5;
     }
-    
+
     /* Sliders */
     .stSlider {
         padding: 1rem 0;
     }
-    
+
     /* File uploader */
     .stFileUploader {
         padding: 1rem;
@@ -231,7 +231,7 @@ st.markdown("""
         background-color: #f8f9fa;
         margin: 1rem 0;
     }
-    
+
     /* Success message */
     .success {
         padding: 1rem;
@@ -240,7 +240,7 @@ st.markdown("""
         color: white;
         margin: 1rem 0;
     }
-    
+
     /* Error message */
     .error {
         padding: 1rem;
@@ -322,7 +322,7 @@ def main():
             </div>
         """,
                     unsafe_allow_html=True)
-                    
+
         # Clear all button
         if st.button("🗑️ Clear All Images", use_container_width=True):
             if 'processed_files' in st.session_state:
@@ -334,15 +334,16 @@ def main():
             st.success("✅ All images cleared successfully!")
             time.sleep(1)  # Give user time to see the success message
             st.rerun()
-            
+
         st.markdown("---")
-        
+
         # Auto-crop toggle
-        auto_crop = st.toggle("📐 Enable Auto-Crop", value=True, 
-                            help="Automatically detect and crop documents")
-        
+        auto_crop = st.toggle("📐 Enable Auto-Crop",
+                              value=True,
+                              help="Automatically detect and crop documents")
+
         st.markdown("---")
-        
+
         # Image format selection
         image_format = st.selectbox("Select Output Format",
                                     ["PNG", "JPEG", "PDF"],
@@ -505,9 +506,11 @@ def main():
                         enhanced_versions[0][0]
                     })
 
-                    # Update progress
+                    # Create progress bar if it doesn't exist
+                    if 'progress_bar' not in locals():
+                        progress_bar = st.progress(0.0)
                     progress = (idx + 1) / len(uploaded_files)
-                    progress_bar = st.progress(progress)
+                    progress_bar.progress(progress)
 
                 except Exception as e:
                     st.session_state.processing_error = str(e)
@@ -551,15 +554,14 @@ def main():
                             st.image(img_data['processed'],
                                      use_container_width=True,
                                      caption="Processed")
-                            
+
                             # Download options below image
                             st.markdown("### Download Options")
                             download_cols = st.columns(3)
-                            
+
                             for file_data in st.session_state.processed_files:
                                 if file_data['name'].startswith(
-                                        os.path.splitext(
-                                            img_data['name'])[0]):
+                                        os.path.splitext(img_data['name'])[0]):
                                     # PDF Download (default)
                                     with download_cols[0]:
                                         st.download_button(
@@ -571,8 +573,10 @@ def main():
                                             key=
                                             f"download_pdf_{img_data['name']}_{time.time()}",
                                             use_container_width=True,
-                                            help="Best for documents - recommended format")
-                                    
+                                            help=
+                                            "Best for documents - recommended format"
+                                        )
+
                                     # PNG Download
                                     with download_cols[1]:
                                         st.download_button(
@@ -584,7 +588,7 @@ def main():
                                             key=
                                             f"download_png_{img_data['name']}_{time.time()}",
                                             use_container_width=True)
-                                            
+
                                     # JPEG Download
                                     with download_cols[2]:
                                         st.download_button(
@@ -743,13 +747,13 @@ def main():
         2. **Background**: Use a dark, contrasting background
         3. **Alignment**: Keep document edges parallel to frame edges
         4. **Stability**: Hold the camera steady or use a surface
-        
+
         ### 🎯 Best Practices
         - Clean your camera lens for sharp images
         - Avoid shadows and reflections
         - Keep documents flat while scanning
         - Use auto-crop for perfect alignment
-        
+
         ### 🚀 Processing Tips
         - Adjust enhancement level based on document type
         - Use higher export quality for important documents
