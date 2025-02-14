@@ -157,8 +157,27 @@ def detect_document_corners(image_array, settings=None):
         # Convert contours to the correct format
         if contours and len(contours) > 0:
             contours = [cnt.astype('float32') for cnt in contours]
-    
-    if not contours:
+        
+        if not contours:
+            return None
+            
+        # Find the largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Get the perimeter of the contour
+        peri = cv2.arcLength(largest_contour, True)
+        
+        # Approximate the contour
+        approx = cv2.approxPolyDP(largest_contour, 0.02 * peri, True)
+        
+        # If we found 4 points, return them
+        if len(approx) == 4:
+            return approx.reshape(4, 2)
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error in document corner detection: {str(e)}")
         return None
     
     # Find the largest contour
