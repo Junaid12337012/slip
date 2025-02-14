@@ -140,8 +140,14 @@ def detect_document_corners(image_array, settings=None):
         else:
             gray = image_array.astype(np.uint8)
 
+        # Ensure proper data type
+        gray = np.float32(gray)
+
         # Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, settings.gaussian_kernel, 0)
+
+        # Convert back to uint8 for thresholding
+        blurred = np.uint8(blurred)
 
         # Adaptive thresholding for better text detection
         thresh = cv2.adaptiveThreshold(blurred, 255, 
@@ -155,15 +161,17 @@ def detect_document_corners(image_array, settings=None):
         kernel = np.ones((3,3), np.uint8)
         edges = cv2.dilate(edges, kernel, iterations=1)
 
-        # Find contours
-        contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Find contours with proper mode and method
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         if not contours:
             return None
 
-        # Find the largest contour and ensure proper format
+        # Find the largest contour
         largest_contour = max(contours, key=cv2.contourArea)
-        largest_contour = largest_contour.astype('float32')
+        
+        # Convert to float32 safely
+        largest_contour = np.float32(largest_contour)
 
 
         # Get the perimeter of the contour
