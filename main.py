@@ -402,51 +402,72 @@ def main():
             
             with tab2:
                 if st.session_state.processed_files:
+                    # Add prominent download all button
+                    st.markdown("""
+                        <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+                            <h3 style='margin-bottom: 10px;'>📦 Quick Download All</h3>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
                     try:
-                        # Add "Download All" button at the top
-                        st.markdown("### 📦 Batch Download")
+                        # Create ZIP file with all processed documents
                         zip_buffer = io.BytesIO()
                         with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
                             for file_data in st.session_state.processed_files:
-                                try:
-                                    zip_file.writestr(file_data['name'], file_data['data'])
-                                except Exception as e:
-                                    st.warning(f"⚠️ Could not add {file_data['name']} to ZIP: {str(e)}")
-                                    continue
+                                zip_file.writestr(file_data['name'], file_data['data'])
                         
                         zip_buffer.seek(0)
                         st.download_button(
-                            label="📥 Download All Files As ZIP",
+                            label="📥 DOWNLOAD ALL FILES AS ZIP",
                             data=zip_buffer.getvalue(),
                             file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
                             mime="application/zip",
-                            key=f"download_all_zip_{time.time()}",  # Unique key to prevent caching
-                            use_container_width=True
+                            key=f"download_all_zip_{time.time()}",
+                            use_container_width=True,
+                            help="Click to download all processed files in a single ZIP archive"
                         )
+                        
+                        # Divider
+                        st.markdown("---")
+                        
+                        # Individual downloads section
+                        st.markdown("""
+                            <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+                                <h3 style='margin-bottom: 10px;'>📄 Download Individual Files</h3>
+                                <p>Select and download files one by one</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Create a grid for individual downloads
+                        for idx, file_data in enumerate(st.session_state.processed_files):
+                            with st.container():
+                                col1, col2 = st.columns([3, 1])
+                                with col1:
+                                    st.markdown(f"**{file_data['name']}**")
+                                with col2:
+                                    st.download_button(
+                                        label="📥 Download",
+                                        data=file_data['data'],
+                                        file_name=file_data['name'],
+                                        mime=file_data['mime'],
+                                        key=f"download_file_{idx}_{time.time()}",
+                                        use_container_width=True
+                                    )
+                                st.markdown("---")
                     except Exception as e:
-                        st.error(f"❌ Error creating ZIP file: {str(e)}")
-                    
-                    # Individual file downloads
-                    st.markdown("### 📄 Individual Files")
-                    for idx, file_data in enumerate(st.session_state.processed_files):
-                        try:
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                st.markdown(f"**{file_data['name']}**")
-                            with col2:
-                                st.download_button(
-                                    label="📥 Download",
-                                    data=file_data['data'],
-                                    file_name=file_data['name'],
-                                    mime=file_data['mime'],
-                                    key=f"download_file_{idx}_{time.time()}",  # Unique key to prevent caching
-                                    use_container_width=True
-                                )
-                        except Exception as e:
-                            st.error(f"❌ Error with download button for {file_data['name']}: {str(e)}")
-                            continue
+                        st.error(f"❌ Download Error: {str(e)}\nPlease try again or contact support if the issue persists.")
                 else:
-                    st.info("ℹ️ No processed files available for download. Please process some documents first.")
+                    st.warning("📝 No processed files yet! Please upload and process some documents first.")
+                    st.markdown("""
+                        <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px;'>
+                            <h4>How to get your downloads:</h4>
+                            <ol>
+                                <li>Upload your documents using the file uploader above</li>
+                                <li>Click the 'Process Documents' button</li>
+                                <li>Return to this tab to download your processed files</li>
+                            </ol>
+                        </div>
+                    """, unsafe_allow_html=True)
 
     # Tips and Help Section
     with st.expander("💡 Pro Tips for Perfect Scans", expanded=False):
