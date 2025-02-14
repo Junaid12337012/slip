@@ -161,17 +161,31 @@ def detect_document_corners(image_array, settings=None):
         kernel = np.ones((3,3), np.uint8)
         edges = cv2.dilate(edges, kernel, iterations=1)
 
-        # Find contours with proper mode and method
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        try:
+            # Find contours with proper mode and method
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        if not contours:
+            if not contours:
+                return None
+
+            # Filter out small contours
+            valid_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 1000]
+
+            if not valid_contours:
+                return None
+
+            # Find the largest contour
+            largest_contour = max(valid_contours, key=cv2.contourArea)
+
+            # Convert to float32 safely with error checking
+            if largest_contour.size > 0:
+                largest_contour = np.float32(largest_contour)
+            else:
+                return None
+
+        except Exception as e:
+            print(f"Error during contour processing: {e}")
             return None
-
-        # Find the largest contour
-        largest_contour = max(contours, key=cv2.contourArea)
-        
-        # Convert to float32 safely
-        largest_contour = np.float32(largest_contour)
 
 
         # Get the perimeter of the contour
@@ -189,21 +203,6 @@ def detect_document_corners(image_array, settings=None):
     except Exception as e:
         print(f"Error in document corner detection: {str(e)}")
         return None
-
-    # Find the largest contour
-    largest_contour = max(contours, key=cv2.contourArea)
-
-    # Get the perimeter of the contour
-    peri = cv2.arcLength(largest_contour, True)
-
-    # Approximate the contour
-    approx = cv2.approxPolyDP(largest_contour, 0.02 * peri, True)
-
-    # If we found 4 points, return them
-    if len(approx) == 4:
-        return approx.reshape(4, 2)
-
-    return None
 
 def auto_process_image(image_path):
     """Automatically process an image and save with the same filename"""
