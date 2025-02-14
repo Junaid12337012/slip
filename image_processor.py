@@ -130,11 +130,15 @@ def detect_document_corners(image_array, settings=None):
         if settings is None:
             settings = ImageSettings()
 
+        # Input validation
+        if image_array is None or not isinstance(image_array, np.ndarray):
+            return None
+
         # Convert to grayscale if needed
         if len(image_array.shape) == 3:
-            gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+            gray = cv2.cvtColor(image_array.astype(np.uint8), cv2.COLOR_RGB2GRAY)
         else:
-            gray = image_array
+            gray = image_array.astype(np.uint8)
 
         # Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, settings.gaussian_kernel, 0)
@@ -154,11 +158,16 @@ def detect_document_corners(image_array, settings=None):
         # Find contours
         contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
-        # Convert contours to the correct format
-        if contours and len(contours) > 0:
-            contours = [cnt.astype('float32') for cnt in contours]
-        
-        if not contours:
+        if not contours or len(contours) == 0:
+            return None
+            
+        # Filter and convert contours
+        valid_contours = []
+        for cnt in contours:
+            if len(cnt) >= 4 and cv2.contourArea(cnt) > 1000:  # Minimum area threshold
+                valid_contours.append(cnt.astype('float32'))
+                
+        if not valid_contours:
             return None
             
         # Find the largest contour
