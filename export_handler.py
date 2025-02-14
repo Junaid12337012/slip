@@ -8,22 +8,27 @@ def export_to_txt(text):
 
 def export_to_pdf(text):
     """Export extracted text to PDF format"""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Handle encoding issues and split text into lines
-    lines = text.split('\n')
-    for line in lines:
-        try:
-            # Clean the text and encode properly
-            clean_line = line.encode('latin-1', 'ignore').decode('latin-1')
-            pdf.cell(0, 10, txt=clean_line, ln=True)
-        except Exception:
-            continue
-    
-    return pdf.output(dest='B')
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.set_auto_page_break(auto=True, margin=15)
+        
+        # Handle encoding issues and split text into lines
+        lines = text.split('\n')
+        for line in lines:
+            try:
+                # Remove any problematic characters
+                clean_line = ''.join(char for char in line if ord(char) < 128)
+                if clean_line:
+                    pdf.cell(0, 10, txt=clean_line, ln=True)
+            except Exception:
+                continue
+        
+        # Save to bytes buffer
+        return pdf.output(dest='S').encode('latin-1', errors='ignore')
+    except Exception as e:
+        raise Exception(f"PDF Generation Error: {str(e)}")
 
 def export_to_json(text):
     """Export extracted text to JSON format"""
