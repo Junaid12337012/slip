@@ -399,6 +399,55 @@ def main():
                         with comp_col2:
                             st.markdown(f"**{img_data['type']}**")
                             st.image(img_data['processed'], use_container_width=True, caption="Processed")
+                            
+                            # Add download button directly under the processed image
+                            for file_data in st.session_state.processed_files:
+                                if file_data['name'].startswith(os.path.splitext(img_data['name'])[0]):
+                                    st.download_button(
+                                        label="📥 Download This Image",
+                                        data=file_data['data'],
+                                        file_name=file_data['name'],
+                                        mime=file_data['mime'],
+                                        key=f"download_inline_{img_data['name']}_{time.time()}",
+                                        use_container_width=True
+                                    )
+                                    break
+            
+            # Add batch download section at the bottom
+            if st.session_state.processed_files:
+                st.markdown("---")
+                st.markdown("""
+                    <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                        <h2 style='margin-bottom: 10px;'>📦 Batch Download Options</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                try:
+                    # Create ZIP file with all processed documents
+                    zip_buffer = io.BytesIO()
+                    with zipfile.ZipFile(zip_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+                        for file_data in st.session_state.processed_files:
+                            zip_file.writestr(file_data['name'], file_data['data'])
+                    
+                    zip_buffer.seek(0)
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.download_button(
+                            label="📥 DOWNLOAD ALL AS ZIP",
+                            data=zip_buffer.getvalue(),
+                            file_name=f"all_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                            mime="application/zip",
+                            key=f"download_all_zip_{time.time()}",
+                            use_container_width=True
+                        )
+                    with col2:
+                        st.markdown("""
+                            <div style='background-color: #fff; padding: 10px; border-radius: 5px; text-align: center;'>
+                                <p>Or download individually above under each processed image</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"❌ Download Error: {str(e)}")
             
             with tab2:
                 if st.session_state.processed_files:
