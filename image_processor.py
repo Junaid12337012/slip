@@ -163,25 +163,25 @@ def detect_document_corners(image_array, settings=None):
 
         try:
             # Find contours with proper mode and method
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if not contours:
                 return None
 
-            # Filter out small contours
-            valid_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 1000]
+            # Filter out small contours and ensure proper format
+            valid_contours = []
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area > 1000:
+                    cnt_float32 = cnt.astype(np.float32)
+                    if cnt_float32.size > 0 and cnt_float32.ndim == 3:
+                        valid_contours.append(cnt_float32)
 
             if not valid_contours:
                 return None
 
             # Find the largest contour
             largest_contour = max(valid_contours, key=cv2.contourArea)
-
-            # Convert to float32 safely with error checking
-            if largest_contour.size > 0:
-                largest_contour = np.float32(largest_contour)
-            else:
-                return None
 
         except Exception as e:
             print(f"Error during contour processing: {e}")
