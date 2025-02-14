@@ -333,7 +333,7 @@ def main():
                 st.session_state.processing_error = None
             st.success("✅ All images cleared successfully!")
             time.sleep(1)  # Give user time to see the success message
-            st.experimental_rerun()
+            st.rerun()
             
         st.markdown("---")
         
