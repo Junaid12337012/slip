@@ -31,20 +31,20 @@ st.markdown("""
     @import url('static/style.css');
     /* Main container */
     .main {
-        padding: 2rem;
-        max-width: 1200px;
+        padding: calc(var(--slider-value, 1) * 1rem);
+        max-width: calc(1200px * var(--slider-value, 1));
         margin: 0 auto;
     }
 
     /* Headers */
     h1 {
         color: #1E88E5;
-        font-size: 2.5rem !important;
+        font-size: calc(2.5rem * var(--slider-value, 1)) !important;
         font-weight: 700 !important;
-        margin-bottom: 1.5rem !important;
+        margin-bottom: calc(1.5rem * var(--slider-value, 1)) !important;
         text-align: center;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: calc(1px * var(--slider-value, 1));
     }
 
     /* Card-like containers */
@@ -190,19 +190,36 @@ def load_settings():
         'auto_deskew': True,
     }
 
+    # Try to load from Streamlit session state first
+    if all(f"settings_{key}" in st.session_state for key in default_settings.keys()):
+        loaded_settings = {key: st.session_state[f"settings_{key}"] for key in default_settings.keys()}
+        st.session_state.user_settings = loaded_settings
+        return loaded_settings
+
+    # Try to load from Replit Object Storage
+    try:
+        from replit.object_storage import Client
+        storage_client = Client()
+        stored_settings = storage_client.download_as_json("user_settings.json")
+        if stored_settings:
+            default_settings.update(stored_settings)
+            st.session_state.user_settings = default_settings
+            return default_settings
+    except:
+        pass  # Fall back to local file if Object Storage fails
+
+    # Try to load from local file
     try:
         if os.path.exists(settings_file):
             with open(settings_file, 'r') as f:
                 saved_settings = json.load(f)
-                # Update default settings with saved values
                 default_settings.update(saved_settings)
-                # Store in session state
                 st.session_state.user_settings = default_settings
                 return default_settings
     except Exception as e:
         print(f"Error loading settings: {e}")
 
-    # Store defaults in session state if no saved settings
+    # Use defaults if all else fails
     st.session_state.user_settings = default_settings
     return default_settings
 
@@ -304,6 +321,16 @@ def main():
             </div>
         """,
                     unsafe_allow_html=True)
+        
+        # UI Scale Control
+        ui_scale = st.slider("UI Scale", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
+        st.markdown(f"""
+            <style>
+                :root {{
+                    --slider-value: {ui_scale};
+                }}
+            </style>
+        """, unsafe_allow_html=True)
 
         # Clear all button
         if st.button("🗑️ Clear All Images", use_container_width=True):

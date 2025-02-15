@@ -10,7 +10,7 @@
     "denoise": 10,
     "gamma": 1.0,
     "edge_enhance": 1.0,
-    "detail_enhance": 2.0,
+    "detail_enhance": 1.0,
     "bw_mode": false,
     "auto_deskew": true
 }

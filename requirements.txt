@@ -23,3 +23,5 @@ openpyxl
 pandas
 openpyxl
 pandas
+streamlit
+replit
