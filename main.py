@@ -321,7 +321,7 @@ def main():
             </div>
         """,
                     unsafe_allow_html=True)
-        
+
         # UI Scale Control
         ui_scale = st.slider("UI Scale", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
         st.markdown(f"""
@@ -342,6 +342,35 @@ def main():
                 st.session_state.processing_error = None
             st.success("✅ All images cleared successfully!")
             time.sleep(1)  # Give user time to see the success message
+            st.rerun()
+
+        # Reset settings button
+        if st.button("↩️ Reset to Default Settings", use_container_width=True):
+            default_settings = {
+                'contrast': 1.3,
+                'brightness': 1.15,
+                'sharpness': 1.4,
+                'saturation': 1.2,
+                'clahe_limit': 3.5,
+                'red_balance': 1.0,
+                'green_balance': 1.0,
+                'blue_balance': 1.0,
+                'denoise': 10,
+                'gamma': 1.0,
+                'edge_enhance': 1.0,
+                'detail_enhance': 1.0,
+                'bw_mode': False,
+                'auto_deskew': True,
+            }
+            # Clear cached settings
+            if os.path.exists('settings_cache.json'):
+                os.remove('settings_cache.json')
+
+            # Update session state
+            st.session_state.user_settings = default_settings
+
+            st.success("✅ Settings reset to default!")
+            time.sleep(1)
             st.rerun()
 
         st.markdown("---")
@@ -378,31 +407,34 @@ def main():
         st.subheader("Basic Settings")
 
         # Basic image adjustments
+        # Load settings from cache
+        cached_settings = st.session_state.user_settings
+
         contrast = st.slider("Contrast", 
                            min_value=0.5, 
                            max_value=2.0, 
-                           value=1.3, 
+                           value=cached_settings['contrast'], 
                            step=0.1,
                            help="Adjust image contrast")
 
         brightness = st.slider("Brightness", 
                              min_value=0.5, 
                              max_value=2.0, 
-                             value=1.15, 
+                             value=cached_settings['brightness'], 
                              step=0.05,
                              help="Adjust image brightness")
 
         sharpness = st.slider("Sharpness", 
                              min_value=0.5, 
                              max_value=2.0, 
-                             value=1.4, 
+                             value=cached_settings['sharpness'], 
                              step=0.1,
                              help="Adjust image sharpness")
 
         saturation = st.slider("Saturation", 
                              min_value=0.0, 
                              max_value=2.0, 
-                             value=1.2, 
+                             value=cached_settings['saturation'], 
                              step=0.1,
                              help="Adjust color saturation")
 
