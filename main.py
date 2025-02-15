@@ -5,7 +5,7 @@ st.set_page_config(
     page_title="Document Scanner Pro Max",
     page_icon="📷",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
     menu_items={
         'Get Help':
         'https://github.com/yourusername/SlipTextConverter',
