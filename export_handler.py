@@ -74,6 +74,22 @@ def export_to_json(text):
     }
     return json.dumps(data, ensure_ascii=False, indent=2).encode()
 
+def export_to_excel(text):
+    """Export extracted text to Excel format"""
+    import pandas as pd
+    import io
+    
+    # Split text into lines and create a DataFrame
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    df = pd.DataFrame({'Extracted Text': lines})
+    
+    # Create Excel file in memory
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Extracted Text')
+    
+    return excel_buffer.getvalue()
+
 def merge_images_to_pdf(images):
     """Merge multiple images into a single PDF"""
     try:

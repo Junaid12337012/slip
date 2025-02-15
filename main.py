@@ -616,6 +616,7 @@ def main():
                         with st.expander(f"📄 Text from {img_data['name']}", expanded=True):
                             try:
                                 from ocr_handler import extract_text
+                                from export_handler import export_to_excel
                                 text = extract_text(img_data['processed'])
                                 search_term = st.text_input("Search in text:", key=f"search_{img_data['name']}")
                                 if search_term:
@@ -625,10 +626,23 @@ def main():
                                 else:
                                     st.text_area("Extracted Text:", value=text, height=200)
 
+                                col1, col2 = st.columns(2)
                                 # Add copy button
-                                if st.button(f"📋 Copy Text", key=f"copy_{img_data['name']}"):
-                                    st.write("Text copied to clipboard!")
-                                    st.session_state['clipboard'] = text
+                                with col1:
+                                    if st.button(f"📋 Copy Text", key=f"copy_{img_data['name']}"):
+                                        st.write("Text copied to clipboard!")
+                                        st.session_state['clipboard'] = text
+
+                                # Add Excel export button
+                                with col2:
+                                    excel_data = export_to_excel(text)
+                                    st.download_button(
+                                        label="📥 Export to Excel",
+                                        data=excel_data,
+                                        file_name=f"{os.path.splitext(img_data['name'])[0]}_extracted.xlsx",
+                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                        key=f"excel_{img_data['name']}"
+                                    )
                             except Exception as e:
                                 st.error(f"Could not extract text: {str(e)}")
                     # Add prominent download all button
