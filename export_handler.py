@@ -29,18 +29,19 @@ def export_to_pdf(text, image=None):
             # Get image size
             img_width, img_height = image.size
 
-            # Calculate scaling factor
+            # Calculate scaling factor to fit full page while maintaining aspect ratio
             width_ratio = page_width / img_width
-            height_ratio = (page_height / 2) / img_height  # Use half page for image
-            scale = min(width_ratio, height_ratio)
+            height_ratio = page_height / img_height
+            scale = min(width_ratio, height_ratio) * 0.95  # 95% of page size for margins
 
             # Calculate new dimensions
             new_width = img_width * scale
             new_height = img_height * scale
 
-            # Add image to PDF
+            # Add image to PDF, centered both horizontally and vertically
             x = (page_width - new_width) / 2 + pdf.l_margin
-            pdf.image(temp_img_path, x=x, y=pdf.t_margin, w=new_width)
+            y = (page_height - new_height) / 2 + pdf.t_margin
+            pdf.image(temp_img_path, x=x, y=y, w=new_width, h=new_height)
 
             # Clean up temporary file
             import os
