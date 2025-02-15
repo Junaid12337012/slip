@@ -167,6 +167,65 @@ def get_image_download_link(img, filename, text):
     return href
 
 
+import json
+import os
+
+def load_settings():
+    """Load saved settings from cache file or use defaults"""
+    settings_file = 'settings_cache.json'
+    try:
+        if os.path.exists(settings_file):
+            with open(settings_file, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+    
+    # Return defaults if no saved settings
+    return {
+        'contrast': 1.3,
+        'brightness': 1.15,
+        'sharpness': 1.4,
+        'saturation': 1.2,
+        'clahe_limit': 3.5,
+        'red_balance': 1.0,
+        'green_balance': 1.0,
+        'blue_balance': 1.0,
+        'denoise': 10,
+        'gamma': 1.0,
+        'edge_enhance': 1.0,
+        'detail_enhance': 1.0,
+        'bw_mode': False,
+        'auto_deskew': True,
+    }
+    
+    try:
+        if os.path.exists('settings_cache.json'):
+            with open('settings_cache.json', 'r') as f:
+                saved_settings = json.load(f)
+                default_settings.update(saved_settings)
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+    
+    # Always update session state with latest settings
+    st.session_state.user_settings = default_settings
+    
+    # Initialize slider values in session state
+    for key, value in default_settings.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+    
+    return default_settings
+
+def save_settings(settings):
+    """Save current settings to cache file and session state"""
+    try:
+        with open('settings_cache.json', 'w') as f:
+            json.dump(settings, f)
+        st.session_state.user_settings = settings
+        st.success("✅ Settings saved successfully!")
+    except Exception as e:
+        st.error(f"Error saving settings: {e}")
+
 def init_session_state():
     """Initialize all session state variables"""
     if 'processed_files' not in st.session_state:
@@ -177,6 +236,8 @@ def init_session_state():
         st.session_state.current_page = 'upload'
     if 'processing_error' not in st.session_state:
         st.session_state.processing_error = None
+    if 'user_settings' not in st.session_state:
+        st.session_state.user_settings = load_settings()
 
 
 def main():
@@ -300,15 +361,28 @@ def main():
                              value=1.2, 
                              step=0.1,
                              help="Adjust color saturation")
+        
+        # Save Basic Settings button
+        if st.button("💾 Save Basic Settings", use_container_width=True):
+            settings = st.session_state.user_settings
+            settings.update({
+                'contrast': contrast,
+                'brightness': brightness,
+                'sharpness': sharpness,
+                'saturation': saturation
+            })
+            save_settings(settings)
 
     with settings_tab2:
         st.subheader("Advanced Settings")
-
+        
+        settings = st.session_state.user_settings
+        
         # CLAHE settings
-        clahe_limit = st.slider("CLAHE Limit",
+        settings['clahe_limit'] = st.slider("CLAHE Limit",
                               min_value=1.0,
                               max_value=5.0,
-                              value=3.5,
+                              value=settings['clahe_limit'],
                               step=0.5,
                               help="Adjust contrast enhancement level")
 
@@ -333,6 +407,31 @@ def main():
         st.subheader("Processing Modes")
         bw_mode = st.checkbox("Black & White Mode")
         auto_deskew = st.checkbox("Auto-Deskew", value=True)
+
+        # Single save button for all settings
+        st.markdown("---")
+        if st.button("💾 Save All Settings", use_container_width=True, key="save_all_settings"):
+            settings = st.session_state.user_settings
+            settings.update({
+                'contrast': contrast,
+                'brightness': brightness,
+                'sharpness': sharpness,
+                'saturation': saturation,
+                'clahe_limit': settings['clahe_limit'],
+                'red_balance': red_balance,
+                'green_balance': green_balance,
+                'blue_balance': blue_balance,
+                'denoise': denoise,
+                'gamma': gamma,
+                'edge_enhance': edge_enhance,
+                'detail_enhance': detail_enhance,
+                'bw_mode': bw_mode,
+                'auto_deskew': auto_deskew
+            })
+            save_settings(settings)
+            # Force session state to persist
+            st.session_state.user_settings = settings
+            st.experimental_rerun()
 
     # Edge Detection Settings
     st.sidebar.subheader("Edge Detection")
@@ -380,7 +479,7 @@ def main():
 
                     # Create custom settings based on user input
                     custom_settings = ImageSettings()
-                    custom_settings.clahe_clip_limit = clahe_limit
+                    custom_settings.clahe_clip_limit = settings['clahe_limit']
                     custom_settings.contrast = contrast
                     custom_settings.brightness = brightness
                     custom_settings.sharpness = sharpness
