@@ -173,15 +173,7 @@ import os
 def load_settings():
     """Load saved settings from cache file or use defaults"""
     settings_file = 'settings_cache.json'
-    try:
-        if os.path.exists(settings_file):
-            with open(settings_file, 'r') as f:
-                return json.load(f)
-    except Exception as e:
-        print(f"Error loading settings: {e}")
-    
-    # Return defaults if no saved settings
-    return {
+    default_settings = {
         'contrast': 1.3,
         'brightness': 1.15,
         'sharpness': 1.4,
@@ -197,7 +189,23 @@ def load_settings():
         'bw_mode': False,
         'auto_deskew': True,
     }
-    
+
+    try:
+        if os.path.exists(settings_file):
+            with open(settings_file, 'r') as f:
+                saved_settings = json.load(f)
+                # Update default settings with saved values
+                default_settings.update(saved_settings)
+                # Store in session state
+                st.session_state.user_settings = default_settings
+                return default_settings
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+
+    # Store defaults in session state if no saved settings
+    st.session_state.user_settings = default_settings
+    return default_settings
+
     try:
         if os.path.exists('settings_cache.json'):
             with open('settings_cache.json', 'r') as f:
@@ -205,26 +213,35 @@ def load_settings():
                 default_settings.update(saved_settings)
     except Exception as e:
         print(f"Error loading settings: {e}")
-    
+
     # Always update session state with latest settings
     st.session_state.user_settings = default_settings
-    
+
     # Initialize slider values in session state
     for key, value in default_settings.items():
         if key not in st.session_state:
             st.session_state[key] = value
-    
+
     return default_settings
 
 def save_settings(settings):
     """Save current settings to cache file and session state"""
     try:
-        with open('settings_cache.json', 'w') as f:
-            json.dump(settings, f)
+        # Update session state first
         st.session_state.user_settings = settings
+
+        # Save to file
+        with open('settings_cache.json', 'w') as f:
+            json.dump(settings, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+
         st.success("✅ Settings saved successfully!")
+
+        # Force Streamlit to rerun with new settings
+        st.rerun()
     except Exception as e:
-        st.error(f"Error saving settings: {e}")
+        st.error(f"Error saving settings: {str(e)}")
 
 def init_session_state():
     """Initialize all session state variables"""
@@ -361,7 +378,7 @@ def main():
                              value=1.2, 
                              step=0.1,
                              help="Adjust color saturation")
-        
+
         # Save Basic Settings button
         if st.button("💾 Save Basic Settings", use_container_width=True):
             settings = st.session_state.user_settings
@@ -375,9 +392,9 @@ def main():
 
     with settings_tab2:
         st.subheader("Advanced Settings")
-        
+
         settings = st.session_state.user_settings
-        
+
         # CLAHE settings
         settings['clahe_limit'] = st.slider("CLAHE Limit",
                               min_value=1.0,
@@ -431,7 +448,7 @@ def main():
             save_settings(settings)
             # Force session state to persist
             st.session_state.user_settings = settings
-            st.experimental_rerun()
+            st.rerun()
 
     # Edge Detection Settings
     st.sidebar.subheader("Edge Detection")
@@ -816,7 +833,7 @@ def main():
                                         mime=file_data['mime'],
                                         key=
                                         f"download_file_{idx}_{time.time()}",
-                                        use_container_width=True)
+                                        use_containerwidth=True)
                                 st.markdown("---")
                     except Exception as e:
                         st.error(
