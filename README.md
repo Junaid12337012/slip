@@ -13,7 +13,7 @@ A powerful document scanning and enhancement application built with Streamlit an
 
 ## Live Demo
 
-Visit the live application at: [Document Scanner Pro Max](https://your-app-name.streamlit.app)
+Visit the live application at: [Document Scanner Pro Max](https://slipconvertor.streamlit.app)
 
 ## Deployment Instructions
 
