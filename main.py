@@ -264,42 +264,75 @@ def main():
         else:
             export_quality = 95
 
-    # Advanced Settings Sidebar
+    # Advanced Settings Sidebar with tabs
     st.sidebar.title("⚙️ Advanced Settings")
 
-    # Image Processing Settings
-    st.sidebar.subheader("Image Processing")
+    settings_tab1, settings_tab2 = st.sidebar.tabs(["Basic", "Advanced"])
 
-    # CLAHE settings
-    clahe_limit = st.sidebar.slider("Contrast Limit",
-                                    min_value=1.0,
-                                    max_value=5.0,
-                                    value=3.5,
-                                    step=0.5,
-                                    help="Adjust contrast enhancement level")
+    with settings_tab1:
+        st.subheader("Basic Settings")
 
-    # Contrast and Brightness
-    contrast = st.sidebar.slider("Contrast",
-                                 min_value=0.5,
-                                 max_value=2.0,
-                                 value=1.3,
-                                 step=0.1,
-                                 help="Adjust image contrast")
+        # Basic image adjustments
+        contrast = st.slider("Contrast", 
+                           min_value=0.5, 
+                           max_value=2.0, 
+                           value=1.3, 
+                           step=0.1,
+                           help="Adjust image contrast")
 
-    brightness = st.sidebar.slider("Brightness",
-                                   min_value=0.5,
-                                   max_value=2.0,
-                                   value=1.15,
-                                   step=0.05,
-                                   help="Adjust image brightness")
+        brightness = st.slider("Brightness", 
+                             min_value=0.5, 
+                             max_value=2.0, 
+                             value=1.15, 
+                             step=0.05,
+                             help="Adjust image brightness")
 
-    # Sharpness
-    sharpness = st.sidebar.slider("Sharpness",
-                                  min_value=0.5,
-                                  max_value=2.0,
-                                  value=1.4,
-                                  step=0.1,
-                                  help="Adjust image sharpness")
+        sharpness = st.slider("Sharpness", 
+                             min_value=0.5, 
+                             max_value=2.0, 
+                             value=1.4, 
+                             step=0.1,
+                             help="Adjust image sharpness")
+
+        saturation = st.slider("Saturation", 
+                             min_value=0.0, 
+                             max_value=2.0, 
+                             value=1.2, 
+                             step=0.1,
+                             help="Adjust color saturation")
+
+    with settings_tab2:
+        st.subheader("Advanced Settings")
+
+        # CLAHE settings
+        clahe_limit = st.slider("CLAHE Limit",
+                              min_value=1.0,
+                              max_value=5.0,
+                              value=3.5,
+                              step=0.5,
+                              help="Adjust contrast enhancement level")
+
+        # Color balance
+        st.subheader("Color Balance")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            red_balance = st.slider("Red", 0.5, 1.5, 1.0, 0.1)
+        with col2:
+            green_balance = st.slider("Green", 0.5, 1.5, 1.0, 0.1)
+        with col3:
+            blue_balance = st.slider("Blue", 0.5, 1.5, 1.0, 0.1)
+
+        # Additional processing options
+        st.subheader("Additional Processing")
+        denoise = st.slider("Noise Reduction", 0, 20, 10, 1)
+        gamma = st.slider("Gamma", 0.5, 2.0, 1.0, 0.1)
+        edge_enhance = st.slider("Edge Enhancement", 0.0, 2.0, 1.0, 0.1)
+        detail_enhance = st.slider("Detail Enhancement", 0.5, 2.0, 1.0, 0.1)
+
+        # Processing modes
+        st.subheader("Processing Modes")
+        bw_mode = st.checkbox("Black & White Mode")
+        auto_deskew = st.checkbox("Auto-Deskew", value=True)
 
     # Edge Detection Settings
     st.sidebar.subheader("Edge Detection")
@@ -469,18 +502,21 @@ def main():
                                         os.path.splitext(img_data['name'])[0]):
                                     # PDF Download (default)
                                     with download_cols[0]:
-                                        st.download_button(
-                                            label="📥 PDF (Recommended)",
-                                            data=file_data['data'],
-                                            file_name=
-                                            f"{os.path.splitext(file_data['name'])[0]}.pdf",
-                                            mime="application/pdf",
-                                            key=
-                                            f"download_pdf_{img_data['name']}_{time.time()}",
-                                            use_container_width=True,
-                                            help=
-                                            "Best for documents - recommended format"
-                                        )
+                                        # Create PDF with image
+                                        try:
+                                            from export_handler import export_to_pdf
+                                            pdf_data = export_to_pdf("", img_data['processed'])
+                                            st.download_button(
+                                                label="📥 PDF (Recommended)",
+                                                data=pdf_data,
+                                                file_name=f"{os.path.splitext(file_data['name'])[0]}.pdf",
+                                                mime="application/pdf",
+                                                key=f"download_pdf_{img_data['name']}_{time.time()}",
+                                                use_container_width=True,
+                                                help="Best for documents - recommended format"
+                                            )
+                                        except Exception as e:
+                                            st.error(f"Error creating PDF: {str(e)}")
 
                                     # PNG Download
                                     with download_cols[1]:
@@ -516,6 +552,27 @@ def main():
                     </div>
                 """,
                             unsafe_allow_html=True)
+
+                # Add merge to PDF option
+                if len(st.session_state.processed_images) > 1:
+                    st.markdown("### 📑 Merge All Images to PDF")
+                    if st.button("Merge All to PDF", key="merge_pdf"):
+                        try:
+                            from export_handler import merge_images_to_pdf
+                            processed_images = [img_data['processed'] for img_data in st.session_state.processed_images]
+                            merged_pdf = merge_images_to_pdf(processed_images)
+                            st.download_button(
+                                label="📥 Download Merged PDF",
+                                data=merged_pdf,
+                                file_name=f"merged_documents_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                mime="application/pdf",
+                                key=f"download_merged_pdf_{time.time()}"
+                            )
+                            st.success("✅ PDF merged successfully!")
+                        except Exception as e:
+                            st.error(f"❌ Error merging PDF: {str(e)}")
+
+                    st.markdown("---")
 
                 try:
                     # Create ZIP file with all processed documents
@@ -567,7 +624,7 @@ def main():
                                     st.markdown(highlighted_text)
                                 else:
                                     st.text_area("Extracted Text:", value=text, height=200)
-                                
+
                                 # Add copy button
                                 if st.button(f"📋 Copy Text", key=f"copy_{img_data['name']}"):
                                     st.write("Text copied to clipboard!")

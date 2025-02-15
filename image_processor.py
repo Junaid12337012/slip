@@ -4,19 +4,33 @@ from PIL import Image, ImageEnhance
 
 class ImageSettings:
     def __init__(self):
-        # Updated settings for bank slip/document processing
+        # Image enhancement settings
         self.clahe_clip_limit = 3.0
         self.clahe_grid_size = (8, 8)
-        self.canny_low = 50  # Lower threshold for better edge detection
+        self.canny_low = 50
         self.canny_high = 150
-        self.gaussian_kernel = (3, 3)  # Lighter blur
+        self.gaussian_kernel = (3, 3)
         self.max_dimension = 2000
-        self.contrast = 1.6  # 60% increase
-        self.brightness = 1.5  # 50% increase
-        self.sharpness = 1.4  # 40% increase
-        self.shadow_reduction = 0.25  # 25% shadow reduction
+        self.contrast = 1.6
+        self.brightness = 1.5
+        self.sharpness = 1.4
+        self.shadow_reduction = 0.25
         self.noise_reduction = True
         self.auto_rotate = True
+        
+        # New advanced settings
+        self.denoise_strength = 10
+        self.saturation = 1.2
+        self.gamma = 1.0
+        self.color_balance = {
+            'red': 1.0,
+            'green': 1.0,
+            'blue': 1.0
+        }
+        self.edge_enhancement = 1.0
+        self.deskew_angle = 0
+        self.bw_mode = False
+        self.detail_enhancement = 1.0
 
 def order_points(pts):
     """Order points in clockwise order: top-left, top-right, bottom-right, bottom-left"""
@@ -61,25 +75,69 @@ def enhance_image(image_array, settings=None):
     if settings is None:
         settings = ImageSettings()
 
-    # Convert to LAB color space for better processing
+    # Convert to PIL Image for enhancement chain
+    image_pil = Image.fromarray(image_array)
+    
+    # Apply denoising if enabled
+    if settings.noise_reduction:
+        image_array = cv2.fastNlMeansDenoisingColored(
+            np.array(image_pil), 
+            None, 
+            settings.denoise_strength, 
+            settings.denoise_strength
+        )
+        image_pil = Image.fromarray(image_array)
+
+    # Apply color balance
+    r, g, b = image_pil.split()
+    r = r.point(lambda x: x * settings.color_balance['red'])
+    g = g.point(lambda x: x * settings.color_balance['green'])
+    b = b.point(lambda x: x * settings.color_balance['blue'])
+    image_pil = Image.merge('RGB', (r, g, b))
+
+    # Apply basic enhancements
+    enhancers = {
+        'Contrast': ImageEnhance.Contrast(image_pil),
+        'Brightness': ImageEnhance.Brightness(image_pil),
+        'Sharpness': ImageEnhance.Sharpness(image_pil),
+        'Color': ImageEnhance.Color(image_pil)
+    }
+    
+    image_pil = enhancers['Contrast'].enhance(settings.contrast)
+    image_pil = enhancers['Brightness'].enhance(settings.brightness)
+    image_pil = enhancers['Sharpness'].enhance(settings.sharpness)
+    image_pil = enhancers['Color'].enhance(settings.saturation)
+
+    # Convert to LAB for CLAHE
+    image_array = np.array(image_pil)
     lab = cv2.cvtColor(image_array, cv2.COLOR_RGB2LAB)
     l, a, b = cv2.split(lab)
-
-    # Apply CLAHE to L channel
-    clahe = cv2.createCLAHE(clipLimit=settings.clahe_clip_limit, 
-                           tileGridSize=settings.clahe_grid_size)
+    
+    clahe = cv2.createCLAHE(
+        clipLimit=settings.clahe_clip_limit, 
+        tileGridSize=settings.clahe_grid_size
+    )
     cl = clahe.apply(l)
-
-    # Merge channels
+    
+    # Merge back
     limg = cv2.merge((cl, a, b))
     enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2RGB)
-
-    # Convert to PIL for sharpness
-    enhanced_pil = Image.fromarray(enhanced)
-    enhancer = ImageEnhance.Sharpness(enhanced_pil)
-    enhanced_pil = enhancer.enhance(settings.sharpness)
-
-    return np.array(enhanced_pil)
+    
+    # Convert to black and white if enabled
+    if settings.bw_mode:
+        enhanced_pil = Image.fromarray(enhanced).convert('L')
+        enhanced = np.array(enhanced_pil)
+        
+    # Apply edge enhancement if needed
+    if settings.edge_enhancement > 1.0:
+        edge_enhanced = cv2.Laplacian(enhanced, cv2.CV_8U)
+        enhanced = cv2.addWeighted(
+            enhanced, 1, 
+            edge_enhanced, settings.edge_enhancement - 1, 
+            0
+        )
+    
+    return enhanced
 
 def detect_document_corners(image_array, settings=None):
     """Detect document corners using edge detection and contour finding"""
